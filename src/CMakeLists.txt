@@ -21,6 +21,7 @@ set(CORE_SOURCES
     vision/DetectionResult.h
     vision/Detector.h
     vision/Detector.cpp
+    comm/ITransport.h
     comm/TcpReporter.h
     comm/TcpReporter.cpp
 )

@@ -1,6 +1,7 @@
 #include "ui/MainWindow.h"
 #include "camera/VirtualCamera.h"
 #include "camera/MediaFoundationCamera.h"
+#include "comm/TcpReporter.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -38,11 +39,12 @@ MainWindow::MainWindow(QWidget* parent)
     connect(&pipeline_, &Pipeline::statusChanged, this, &MainWindow::onPipelineStatus);
     connect(&pipeline_, &Pipeline::logMessage, this, &MainWindow::appendLog);
 
-    // 连接 TCP 信号
-    connect(&tcp_, &TcpReporter::connected, this, &MainWindow::onTcpConnected);
-    connect(&tcp_, &TcpReporter::disconnected, this, &MainWindow::onTcpDisconnected);
-    connect(&tcp_, &TcpReporter::errorOccurred, this, &MainWindow::onTcpError);
-    connect(&tcp_, &TcpReporter::logMessage, this, &MainWindow::appendLog);
+    // 传输层：默认 TCP 实现（面向 ITransport 接口，未来可切换 KCP 等）
+    transport_ = new TcpReporter(this);
+    connect(transport_, &ITransport::connected, this, &MainWindow::onTcpConnected);
+    connect(transport_, &ITransport::disconnected, this, &MainWindow::onTcpDisconnected);
+    connect(transport_, &ITransport::errorOccurred, this, &MainWindow::onTcpError);
+    connect(transport_, &ITransport::logMessage, this, &MainWindow::appendLog);
 
     // 默认相机
     pipeline_.setCamera(std::make_shared<VirtualCamera>(640, 480));
@@ -220,13 +222,13 @@ void MainWindow::applyDetectorParams() {
 }
 
 void MainWindow::connectTcp() {
-    tcp_.setAutoReconnect(true);
-    tcp_.connectTo(hostEdit_->text().trimmed(), quint16(portSpin_->value()));
+    transport_->setAutoReconnect(true);
+    transport_->connectTo(hostEdit_->text().trimmed(), quint16(portSpin_->value()));
 }
 
 void MainWindow::disconnectTcp() {
-    tcp_.setAutoReconnect(false);
-    tcp_.disconnectFromHost();
+    transport_->setAutoReconnect(false);
+    transport_->disconnectFromHost();
     tcpStateLabel_->setText(QStringLiteral("未连接"));
 }
 
@@ -276,8 +278,8 @@ void MainWindow::onResult(const DetectionResult& result) {
     if (!result.annotated.isNull())
         updateImage(result.annotated);
 
-    // 结果上报 TCP
-    tcp_.sendResult(result);
+    // 结果上报：通过传输层接口发送（当前为 TCP，未来可切换 KCP）
+    transport_->sendResult(result);
 
     appendLog(tr("检测: %1 | 缺陷数=%2 | 缺陷面积=%3 | 工件(%4,%5 %6x%7)")
                   .arg(result.ok ? QStringLiteral("OK") : QStringLiteral("NG"))

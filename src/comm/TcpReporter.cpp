@@ -11,7 +11,7 @@ constexpr quint8 kHead1 = 0x55;
 } // namespace
 
 TcpReporter::TcpReporter(QObject* parent)
-    : QObject(parent), socket_(new QTcpSocket(this)) {
+    : ITransport(parent), socket_(new QTcpSocket(this)) {
     connect(socket_, &QTcpSocket::connected, this, &TcpReporter::onSocketConnected);
     connect(socket_, &QTcpSocket::disconnected, this, &TcpReporter::onSocketDisconnected);
     connect(socket_, &QAbstractSocket::errorOccurred, this, &TcpReporter::onSocketError);

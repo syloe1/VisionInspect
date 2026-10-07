@@ -1,7 +1,7 @@
 #pragma once
 #include <QMainWindow>
 #include "core/Pipeline.h"
-#include "comm/TcpReporter.h"
+#include "comm/ITransport.h"
 #include "vision/DetectionResult.h"
 
 class QLabel;
@@ -45,7 +45,8 @@ private:
     void setRunningUi(bool running);
 
     vi::Pipeline pipeline_;
-    vi::TcpReporter tcp_;
+    // 传输层抽象（面向接口）：当前默认实现为 TcpReporter，未来可切换 KCP 等
+    vi::ITransport* transport_ = nullptr;
 
     // 显示与控制
     QLabel* imageLabel_ = nullptr;
