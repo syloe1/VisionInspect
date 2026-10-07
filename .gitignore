@@ -1,0 +1,13 @@
+# 构建产物（不提交编译结果与运行库）
+build/
+
+# 编译中间文件
+*.o
+*.obj
+*.user
+
+# 测试临时输出
+tests/out.txt
+tests/err.txt
+tests/runresult.txt
+tests/smoke_*.txt
